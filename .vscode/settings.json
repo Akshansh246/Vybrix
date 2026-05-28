@@ -1,0 +1,5 @@
+{
+    "yaml.schemas": {
+        "kubernetes://schema/rbac.authorization.k8s.io/v1@role": "file:///d%3A/Sheryians%20Backend/Vybrix/k8s/rbac.yml"
+    }
+}
