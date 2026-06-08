@@ -6,20 +6,49 @@ const agentRouter = Router();
 
 agentRouter.post('/invoke', async (req, res) => {
     try {
-        const { message } = req.body
-        const response = await agent.invoke({ messages: [{
-            role: 'user',
-            content: message
-        }] })
-        res.status(200).json({
-            response
-        })
-    }catch(error){
-        console.error('Error invoking agent:', error)
-        res.status(500).json({
-            error: 'An error occurred while invoking the agent.'
-        })
-    }    
-})
+        const { message, projectId } = req.body;
+
+        res.writeHead(200, {
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive'
+        });
+
+        const response = await agent.stream(
+            {
+                messages: [
+                    {
+                        role: 'user',
+                        content: message
+                    }
+                ]
+            },
+            {
+                context: {
+                    projectId
+                },
+                streamMode: 'custom'
+            }
+        );
+
+        for await (const chunk of response) {
+            console.log(chunk);
+            res.write(`data: ${JSON.stringify(chunk)}\n\n`);
+        }
+
+        res.end();
+
+    } catch (error) {
+        console.error('Error invoking agent:', error);
+
+        if (!res.headersSent) {
+            res.status(500).json({
+                error: 'An error occurred while invoking the agent.'
+            });
+        } else {
+            res.end();
+        }
+    }
+});
 
 export default agentRouter;
