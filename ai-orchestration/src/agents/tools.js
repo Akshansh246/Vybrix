@@ -9,7 +9,7 @@ export const listFiles = tool(
         console.log('using the listFiles tool')
         console.log('========================================')
 
-        const response = await axios.get('http://019e7800-f238-7690-b311-ccf63b847ae4.agent.localhost/list-files')
+        const response = await axios.get('http://sandbox-service-019e9c2b-1e9f-7777-9ba3-58307b83f70a:3000/list-files')
 
         console.log('========================================')
         console.log('response from the listFiles tool', response.data.files)
@@ -31,7 +31,7 @@ export const readFiles = tool(
         console.log('========================================')
 
 
-        const response = await axios.get('http://019e7800-f238-7690-b311-ccf63b847ae4.agent.localhost/read-files?files=' + files.join(','))
+        const response = await axios.get('http://sandbox-service-019e9c2b-1e9f-7777-9ba3-58307b83f70a:3000/read-files?files=' + files.join(','))
 
         console.log('========================================')
         console.log('response from the readFiles tool', response.data)
@@ -55,7 +55,7 @@ export const updateFiles = tool(
         console.log('========================================')
 
 
-        const response = await axios.patch('http://019e7800-f238-7690-b311-ccf63b847ae4.agent.localhost/update-files', {
+        const response = await axios.patch('http://sandbox-service-019e9c2b-1e9f-7777-9ba3-58307b83f70a:3000/update-files', {
             updates: files
         })
 
@@ -67,12 +67,53 @@ export const updateFiles = tool(
     },
     {
         name: "update_files",
-        description: "Update the contents of a specified files. This is useful for making changes to files based on the requirements of the task at hand. This tool can also be used to create new files by providing a new file name in the file field and the content to be added in the content field.",
+        description: "Update the contents of a specified files. This is useful for making changes to files based on the requirements of the task at hand. Always make sure to read files before updating them to ensure you understand the existing content and structure.",
         schema: z.object({
             files: z.array(z.object({
                 file: z.string().describe('The absolute path of the file to update'),
                 content: z.string().describe('The new content for the file. The content should support json format.')
             })).describe("The list of the files to update and their new contents")
+        })
+    }
+)
+
+export const createFiles = tool(
+    async ({ files }) => {
+
+        console.log('========================================')
+        console.log('using createFiles tool', files)
+        console.log('========================================')
+
+        const response = await axios.post(
+            'http://sandbox-service-019e9c2b-1e9f-7777-9ba3-58307b83f70a:3000/create-files',
+            { files }
+        )
+
+        return JSON.stringify(response.data.results)
+
+    },
+    {
+        name: "create_files",
+        description: `
+            Create one or more new files.
+
+            Use this tool whenever a file does not already exist.
+
+            This tool can also create required folders automatically.
+
+            Examples:
+            - src/components/Hero.jsx
+            - src/components/Navbar.jsx
+            - src/pages/Home.jsx
+            - src/styles/theme.css
+        `,
+        schema: z.object({
+            files: z.array(
+                z.object({
+                    file: z.string(),
+                    content: z.string()
+                })
+            )
         })
     }
 )
