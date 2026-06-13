@@ -14,6 +14,8 @@ agentRouter.post('/invoke', async (req, res) => {
             'Connection': 'keep-alive'
         });
 
+        const writer = (text) => res.write(text);
+
         const response = await agent.stream(
             {
                 messages: [
@@ -25,7 +27,8 @@ agentRouter.post('/invoke', async (req, res) => {
             },
             {
                 context: {
-                    projectId
+                    projectId,
+                    writer
                 },
                 streamMode: 'custom'
             }

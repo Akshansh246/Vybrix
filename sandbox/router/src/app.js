@@ -2,6 +2,7 @@ import express from 'express'
 import morgan from 'morgan'
 import http from 'http'
 import { createProxyMiddleware } from 'http-proxy-middleware'
+import { createProxyServer } from 'httpxy';
 
 const app = express()
 const server = http.createServer(app)
@@ -26,7 +27,6 @@ function getProxy(sandboxId) {
         proxies[sandboxId] = createProxyMiddleware({
             target,
             changeOrigin: true,
-            ws: true
         })
     }
 
@@ -39,13 +39,15 @@ function getAgentProxy(sandboxId) {
     if (!agentProxies[sandboxId]) {
         agentProxies[sandboxId] = createProxyMiddleware({
             target,
-            changeOrigin: true,
-            ws: true
-        })
+            changeOrigin: true
+        });
     }
 
     return agentProxies[sandboxId]
 }
+
+const wsProxy = createProxyServer({ changeOrigin: true });
+wsProxy.on('error', (err, req, socket) => { socket?.destroy(); });
 
 app.use((req, res, next) => {
     const host = req.headers.host || ''
@@ -68,33 +70,22 @@ app.use((req, res, next) => {
 })
 
 server.on('upgrade', (req, socket, head) => {
-    const host = req.headers.host || ''
-    const parts = host.split('.')
+    socket.on('error', () => socket.destroy()); // guard against EPIPE during live pipe
 
+    const host = req.headers.host || '';
+    const parts = host.split('.')
     const sandboxId = parts[0]
     const subdomain = parts[1]
 
-    console.log(`WS Upgrade: ${host}`)
-
     if (subdomain === 'agent') {
-        const proxy = getAgentProxy(sandboxId)
-
-        if (proxy.upgrade) {
-            proxy.upgrade(req, socket, head)
-        } else {
-            socket.destroy()
-        }
+        wsProxy.ws(req, socket, { target: `http://sandbox-service-${sandboxId}:3000` }, head)
+            .catch(() => socket.destroy());
     } else if (subdomain === 'preview') {
-        const proxy = getProxy(sandboxId)
-
-        if (proxy.upgrade) {
-            proxy.upgrade(req, socket, head)
-        } else {
-            socket.destroy()
-        }
+        wsProxy.ws(req, socket, { target: `http://sandbox-service-${sandboxId}` }, head)
+            .catch(() => socket.destroy());
     } else {
-        socket.destroy()
+        socket.destroy();
     }
-})
+});
 
 export default server
