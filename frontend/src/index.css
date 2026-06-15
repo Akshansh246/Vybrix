@@ -6,24 +6,24 @@
 ================================================================ */
 
 @theme {
-  /* ── Base IDE dark palette (Vybrix midnight extended) ─────── */
-  --ide-bg:             #0A1628;  /* deepest — matches brand midnight */
-  --ide-bg-2:           #060E1A;  /* navbar / statusbar */
-  --ide-surface:        #0F1D35;  /* panel surfaces */
-  --ide-surface-2:      #1B2C4F;  /* active states, hover */
-  --ide-surface-3:      #2D4270;  /* selection, highlights */
-  --ide-border:         #1E3154;  /* subtle dividers */
-  --ide-border-2:       #2D4270;  /* stronger dividers */
+  /* ── Base IDE dark palette (Vybrix Monolith Monochrome) ─────── */
+  --ide-bg:             #050505;  /* deepest black background */
+  --ide-bg-2:           #0A0A0A;  /* navbar / statusbar */
+  --ide-surface:        #111111;  /* panel surfaces */
+  --ide-surface-2:      #181818;  /* active states, hover */
+  --ide-surface-3:      #222222;  /* selection, highlights */
+  --ide-border:         rgba(255, 255, 255, 0.08);  /* subtle dividers */
+  --ide-border-2:       rgba(255, 255, 255, 0.12);  /* stronger dividers */
 
   /* ── Text ───────────────────────────────────────────────────── */
-  --ide-text:           #E6EDF3;  /* primary text */
-  --ide-text-2:         #8B9AB8;  /* secondary text */
-  --ide-text-muted:     #4A5E7A;  /* muted / disabled */
+  --ide-text:           #FFFFFF;  /* primary text */
+  --ide-text-2:         #A0A0A0;  /* secondary text (silver/grey) */
+  --ide-text-muted:     #555555;  /* muted / disabled */
 
-  /* ── Accent (brand blue) ───────────────────────────────────── */
-  --ide-accent:         #2F81F7;  /* blue accent */
-  --ide-accent-dim:     #1A4D99;  /* muted accent */
-  --ide-accent-glow:    rgba(47, 129, 247, 0.18);
+  /* ── Accent (monochrome white) ─────────────────────────────── */
+  --ide-accent:         #FFFFFF;  /* white accent */
+  --ide-accent-dim:     #666666;  /* muted accent */
+  --ide-accent-glow:    rgba(255, 255, 255, 0.1);
 
   /* ── Semantic colors ───────────────────────────────────────── */
   --ide-green:          #3FB950;
@@ -137,12 +137,13 @@ body {
   width: 26px;
   height: 26px;
   border-radius: 6px;
-  background: linear-gradient(135deg, #2F81F7, #1A4D99);
+  background: linear-gradient(135deg, #181818, #0A0A0A);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  box-shadow: 0 0 12px rgba(47, 129, 247, 0.4);
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.05);
 }
 .ide-logo__wordmark {
   font-size: 14px;
@@ -819,12 +820,13 @@ body {
   width: 28px;
   height: 28px;
   border-radius: 8px;
-  background: linear-gradient(135deg, #2F81F7, #BC8CFF);
+  background: linear-gradient(135deg, #333333, #FFFFFF);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
-  box-shadow: 0 0 12px rgba(47, 129, 247, 0.3);
+  color: #050505;
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.05);
   flex-shrink: 0;
 }
 .ide-chat__title {
@@ -878,7 +880,7 @@ body {
   flex-shrink: 0;
 }
 .ide-chat-avatar--ai {
-  background: linear-gradient(135deg, #2F81F740, #BC8CFF40);
+  background: rgba(255, 255, 255, 0.08);
   border: 1px solid var(--ide-border-2);
   color: var(--ide-accent);
 }
@@ -896,8 +898,8 @@ body {
   line-height: 1.55;
 }
 .ide-chat-bubble--user {
-  background: var(--ide-accent);
-  color: white;
+  background: #FFFFFF;
+  color: #050505;
   border-bottom-right-radius: 3px;
 }
 .ide-chat-bubble--ai {
@@ -1010,12 +1012,12 @@ body {
   border-radius: 7px;
   background: var(--ide-accent);
   border: none;
-  color: white;
+  color: #050505;
   cursor: pointer;
   flex-shrink: 0;
   transition: all 0.15s;
 }
-.ide-chat__send-btn:hover { background: #1A6FE0; box-shadow: 0 0 10px rgba(47,129,247,0.4); }
+.ide-chat__send-btn:hover { background: #E4E4E7; box-shadow: 0 0 10px rgba(255, 255, 255, 0.15); }
 .ide-chat__send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
 .ide-chat__hint {
@@ -1145,9 +1147,9 @@ body {
 }
 .ide-btn--primary {
   background: var(--ide-accent);
-  color: white;
+  color: #050505;
 }
-.ide-btn--primary:hover { background: #1A6FE0; }
+.ide-btn--primary:hover { background: #E4E4E7; }
 
 .ide-spinner {
   width: 20px;
@@ -1215,3 +1217,57 @@ body {
 }
 .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
 .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+
+/* ================================================================
+   RESPONSIVE WORKSPACE MEDIA QUERIES
+================================================================ */
+.ide-mobile-tabs-bar {
+  display: none;
+}
+
+@media (max-width: 1023px) {
+  .ide-mobile-tabs-bar {
+    display: flex;
+    align-items: center;
+    height: 48px;
+    background: var(--ide-bg-2);
+    border-top: 1px solid var(--ide-border);
+    flex-shrink: 0;
+  }
+  .ide-mobile-tab-btn {
+    flex: 1;
+    height: 100%;
+    background: transparent;
+    border: none;
+    color: var(--ide-text-2);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    transition: all 0.15s;
+    border-bottom: 2px solid transparent;
+  }
+  .ide-mobile-tab-btn:hover {
+    color: var(--ide-text);
+    background: var(--ide-surface);
+  }
+  .ide-mobile-tab-btn.active {
+    color: var(--ide-text);
+    background: var(--ide-surface-2);
+    border-bottom-color: var(--ide-accent);
+  }
+}
+
+@media (max-width: 640px) {
+  .ide-sandbox-id-text {
+    max-width: 90px;
+  }
+  .ide-navbar__right {
+    gap: 6px;
+  }
+  .ide-status-label {
+    display: none; /* Hide label on mobile to save space */
+  }
+}
+

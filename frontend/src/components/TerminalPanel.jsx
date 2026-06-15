@@ -21,27 +21,27 @@ export default function TerminalPanel({ sandboxId }) {
 
     const term = new Terminal({
       theme: {
-        background: '#0D1117',
-        foreground: '#E6EDF3',
-        cursor: '#2F81F7',
-        cursorAccent: '#0D1117',
-        black: '#0D1117',
-        brightBlack: '#30363D',
+        background: '#050505', // Deep black matching --ide-bg
+        foreground: '#FFFFFF', // Clean white matching --ide-text
+        cursor: '#FFFFFF', // White cursor
+        cursorAccent: '#050505',
+        black: '#050505',
+        brightBlack: '#222222',
         red: '#F85149',
         brightRed: '#FF7B72',
         green: '#3FB950',
         brightGreen: '#56D364',
         yellow: '#D29922',
         brightYellow: '#E3B341',
-        blue: '#2F81F7',
-        brightBlue: '#79C0FF',
+        blue: '#A0A0A0', // Silver grey for ANSI blue
+        brightBlue: '#FFFFFF', // White for ANSI bright blue
         magenta: '#BC8CFF',
         brightMagenta: '#D2A8FF',
         cyan: '#56D4DD',
         brightCyan: '#87E8EF',
-        white: '#B1BAC4',
-        brightWhite: '#F0F6FC',
-        selectionBackground: 'rgba(47, 129, 247, 0.25)',
+        white: '#E6EDF3',
+        brightWhite: '#FFFFFF',
+        selectionBackground: 'rgba(255, 255, 255, 0.15)', // Light grey selection
       },
       fontFamily: '"JetBrains Mono", "Fira Code", monospace',
       fontSize: 13,
@@ -62,15 +62,15 @@ export default function TerminalPanel({ sandboxId }) {
     termRef.current = term
     fitAddonRef.current = fitAddon
 
-    term.writeln('\x1b[38;5;39m  ██╗   ██╗██╗   ██╗██████╗ ██████╗ ██╗██╗  ██╗\x1b[0m')
-    term.writeln('\x1b[38;5;39m  ██║   ██║╚██╗ ██╔╝██╔══██╗██╔══██╗██║╚██╗██╔╝\x1b[0m')
-    term.writeln('\x1b[38;5;39m  ██║   ██║ ╚████╔╝ ██████╔╝██████╔╝██║ ╚███╔╝ \x1b[0m')
-    term.writeln('\x1b[38;5;39m  ╚██╗ ██╔╝  ╚██╔╝  ██╔══██╗██╔══██╗██║ ██╔██╗ \x1b[0m')
-    term.writeln('\x1b[38;5;39m   ╚████╔╝    ██║   ██████╔╝██║  ██║██║██╔╝ ██╗\x1b[0m')
-    term.writeln('\x1b[38;5;39m    ╚═══╝     ╚═╝   ╚═════╝ ╚═╝  ╚═╝╚═╝╚═╝  ╚═╝\x1b[0m')
+    term.writeln('\x1b[38;5;250m  ██╗   ██╗██╗   ██╗██████╗ ██████╗ ██╗██╗  ██╗\x1b[0m')
+    term.writeln('\x1b[38;5;250m  ██║   ██║╚██╗ ██╔╝██╔══██╗██╔══██╗██║╚██╗██╔╝\x1b[0m')
+    term.writeln('\x1b[38;5;250m  ██║   ██║ ╚████╔╝ ██████╔╝██████╔╝██║ ╚███╔╝ \x1b[0m')
+    term.writeln('\x1b[38;5;250m  ╚██╗ ██╔╝  ╚██╔╝  ██╔══██╗██╔══██╗██║ ██╔██╗ \x1b[0m')
+    term.writeln('\x1b[38;5;250m   ╚████╔╝    ██║   ██████╔╝██║  ██║██║██╔╝ ██╗\x1b[0m')
+    term.writeln('\x1b[38;5;250m    ╚═══╝     ╚═╝   ╚═════╝ ╚═╝  ╚═╝╚═╝╚═╝  ╚═╝\x1b[0m')
     term.writeln('')
     term.writeln('\x1b[38;5;245m  AI-Powered Cloud IDE · Terminal\x1b[0m')
-    term.writeln('\x1b[38;5;245m  Sandbox: \x1b[38;5;39m' + sandboxId + '\x1b[0m')
+    term.writeln('\x1b[38;5;245m  Sandbox: \x1b[38;5;255m' + sandboxId + '\x1b[0m')
     term.writeln('\x1b[38;5;245m  Connecting to sandbox...\x1b[0m')
     term.writeln('')
 

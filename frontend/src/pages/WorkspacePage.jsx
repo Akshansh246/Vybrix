@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useParams, useLocation } from 'react-router-dom'
 import useIDEStore from '../store/useIDEStore.js'
 import { useFileSystem } from '../hooks/useFileSystem.js'
@@ -23,6 +23,18 @@ export default function WorkspacePage() {
   const location = useLocation()
   const sandboxData = location.state?.sandboxData || {}
   const previewUrl = sandboxData.previewUrl || null
+
+  // Responsive Layout States
+  const [isMobileView, setIsMobileView] = useState(window.innerWidth < 1024)
+  const [activeMobileTab, setActiveMobileTab] = useState('editor') // 'explorer' | 'editor' | 'chat'
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobileView(window.innerWidth < 1024)
+    }
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   // IDE store
   const sidebarWidth = useIDEStore((s) => s.sidebarWidth)
@@ -143,61 +155,127 @@ export default function WorkspacePage() {
 
       {/* ── Main area: sidebar + center + chat ──────────────────── */}
       <div className="ide-main">
-        {/* File Explorer */}
-        {sidebarOpen && (
+        {isMobileView ? (
           <>
-            <div
-              className="ide-panel ide-panel--sidebar"
-              style={{ width: sidebarWidth, minWidth: sidebarWidth }}
-            >
-              <FileExplorer
-                files={files}
-                activeFile={activeTab}
-                onSelectFile={handleSelectFile}
-                onRefreshFiles={fetchFiles}
-                isLoadingFiles={isLoadingFiles}
-              />
-            </div>
-            <ResizeHandle direction="horizontal" onMouseDown={onSidebarDragStart} />
-          </>
-        )}
-
-        {/* Center panel (Editor / Preview) */}
-        <div className="ide-panel ide-panel--center">
-          <div className="ide-center-col">
-            {/* Editor + Preview */}
-            <div className="ide-center-col__main">
-              <CenterPanel previewUrl={previewUrl} />
-            </div>
-
-            {/* Terminal resize handle */}
-            {terminalOpen && (
-              <ResizeHandle direction="vertical" onMouseDown={onTermDragStart} />
-            )}
-
-            {/* Terminal */}
-            {terminalOpen && (
-              <div
-                className="ide-panel ide-panel--terminal"
-                style={{ height: terminalHeight, minHeight: terminalHeight }}
-              >
-                <TerminalPanel sandboxId={sandboxId} />
+            {activeMobileTab === 'explorer' && (
+              <div className="ide-panel ide-panel--sidebar" style={{ width: '100%', minWidth: '100%', flex: 1 }}>
+                <FileExplorer
+                  files={files}
+                  activeFile={activeTab}
+                  onSelectFile={(path) => {
+                    handleSelectFile(path)
+                    setActiveMobileTab('editor')
+                  }}
+                  onRefreshFiles={fetchFiles}
+                  isLoadingFiles={isLoadingFiles}
+                />
               </div>
             )}
-          </div>
-        </div>
 
-        {/* Chat ↔ Center resize handle */}
-        <ResizeHandle direction="horizontal" onMouseDown={onChatDragStart} />
+            {activeMobileTab === 'editor' && (
+              <div className="ide-panel ide-panel--center" style={{ width: '100%', minWidth: '100%', flex: 1 }}>
+                <div className="ide-center-col">
+                  <div className="ide-center-col__main">
+                    <CenterPanel previewUrl={previewUrl} />
+                  </div>
+                  {terminalOpen && (
+                    <div className="ide-panel ide-panel--terminal" style={{ height: '35vh', minHeight: '150px' }}>
+                      <TerminalPanel sandboxId={sandboxId} />
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
-        {/* AI Chat Panel */}
-        <div
-          className="ide-panel ide-panel--chat"
-          style={{ width: chatWidth, minWidth: chatWidth }}
-        >
-          <ChatPanel sandboxId={sandboxId} />
-        </div>
+            {activeMobileTab === 'chat' && (
+              <div className="ide-panel ide-panel--chat" style={{ width: '100%', minWidth: '100%', flex: 1 }}>
+                <ChatPanel sandboxId={sandboxId} />
+              </div>
+            )}
+          </>
+        ) : (
+          <>
+            {/* File Explorer */}
+            {sidebarOpen && (
+              <>
+                <div
+                  className="ide-panel ide-panel--sidebar"
+                  style={{ width: sidebarWidth, minWidth: sidebarWidth }}
+                >
+                  <FileExplorer
+                    files={files}
+                    activeFile={activeTab}
+                    onSelectFile={handleSelectFile}
+                    onRefreshFiles={fetchFiles}
+                    isLoadingFiles={isLoadingFiles}
+                  />
+                </div>
+                <ResizeHandle direction="horizontal" onMouseDown={onSidebarDragStart} />
+              </>
+            )}
+
+            {/* Center panel (Editor / Preview) */}
+            <div className="ide-panel ide-panel--center">
+              <div className="ide-center-col">
+                {/* Editor + Preview */}
+                <div className="ide-center-col__main">
+                  <CenterPanel previewUrl={previewUrl} />
+                </div>
+
+                {/* Terminal resize handle */}
+                {terminalOpen && (
+                  <ResizeHandle direction="vertical" onMouseDown={onTermDragStart} />
+                )}
+
+                {/* Terminal */}
+                {terminalOpen && (
+                  <div
+                    className="ide-panel ide-panel--terminal"
+                    style={{ height: terminalHeight, minHeight: terminalHeight }}
+                  >
+                    <TerminalPanel sandboxId={sandboxId} />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Chat ↔ Center resize handle */}
+            <ResizeHandle direction="horizontal" onMouseDown={onChatDragStart} />
+
+            {/* AI Chat Panel */}
+            <div
+              className="ide-panel ide-panel--chat"
+              style={{ width: chatWidth, minWidth: chatWidth }}
+            >
+              <ChatPanel sandboxId={sandboxId} />
+            </div>
+          </>
+        )}
       </div>
+
+      {/* ── Mobile Tab Bar Switcher ────────────────────────────── */}
+      {isMobileView && (
+        <div className="ide-mobile-tabs-bar">
+          <button
+            className={`ide-mobile-tab-btn ${activeMobileTab === 'explorer' ? 'active' : ''}`}
+            onClick={() => setActiveMobileTab('explorer')}
+          >
+            Explorer
+          </button>
+          <button
+            className={`ide-mobile-tab-btn ${activeMobileTab === 'editor' ? 'active' : ''}`}
+            onClick={() => setActiveMobileTab('editor')}
+          >
+            Editor
+          </button>
+          <button
+            className={`ide-mobile-tab-btn ${activeMobileTab === 'chat' ? 'active' : ''}`}
+            onClick={() => setActiveMobileTab('chat')}
+          >
+            AI Chat
+          </button>
+        </div>
+      )}
 
       {/* ── Status Bar ──────────────────────────────────────────── */}
       <StatusBar sandboxId={sandboxId} />
