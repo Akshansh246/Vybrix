@@ -4,7 +4,7 @@ import { createAgent } from 'langchain'
 import { createFiles, listFiles, readFiles, updateFiles } from './tools.js'
 
 const model = new ChatMistralAI({
-    model: "mistral-medium-latest",
+    model: "mistral-large-latest",
     apiKey: process.env.MISTRALAI_API_KEY,
 }) 
 
@@ -29,6 +29,14 @@ const agent = (createAgent({
         - Use import './ComponentName.css' for component-scoped styles
         - Keep styles co-located: each component gets its own .css file
 
+        Use list_files only when you do not know the project structure.
+
+            Use read_files only when a file has not been read previously.
+
+            Avoid repeated reads of the same files.
+
+            Prefer directly updating App.jsx when possible.
+
         ## Code Standards
 
         **React**
@@ -43,7 +51,7 @@ const agent = (createAgent({
         - Use CSS custom properties (variables) for all colors, spacing, and typography:css
     `
 })).withConfig({
-    recursionLimit: 100
+    recursionLimit: 50
 })
 
 export default agent
