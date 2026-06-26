@@ -32,9 +32,13 @@ export default function StatusBar({ sandboxId }) {
           {status.label}
         </span>
         {sandboxId && (
-          <span className="ide-statusbar__item ide-statusbar__sep">
-            {sandboxId.slice(0, 12)}…
-          </span>
+          <>
+            <span className="ide-statusbar__sep" />
+            <span className="ide-statusbar__sandbox">
+              <span style={{ opacity: 0.45 }}>sandbox</span>
+              {sandboxId.slice(0, 8)}
+            </span>
+          </>
         )}
       </div>
       <div className="ide-statusbar__right">

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ENDPOINTS } from '../config/api.js'
 import '../landing.css'
-import ParticleWave from '../components/ParticleWave.jsx'
+import Orb from '../components/Orb.jsx'
 import {
   Zap, Eye, Terminal, ArrowRight, GitFork, Code2,
   Layers, CheckCircle, Sparkles, Play
@@ -165,8 +165,16 @@ export default function LandingPage() {
           />
         </div>
 
-        {/* ── Particle Wave Background Animation ──────────────── */}
-        <ParticleWave />
+        {/* ── Orb Visual (right side hero decoration) ─────────── */}
+        <div className="landing-orb-wrapper">
+          <Orb
+            hue={260}
+            hoverIntensity={0.5}
+            rotateOnHover={true}
+            forceHoverState={false}
+            backgroundColor="#050510"
+          />
+        </div>
 
         {/* ── Frosted glass layer ──────────────────────────────── */}
         <div className="landing-glass" />

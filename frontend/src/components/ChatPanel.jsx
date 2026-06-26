@@ -8,18 +8,42 @@ import {
   Sparkles,
   AlertCircle,
   ChevronDown,
+  FileText,
+  Search,
+  Wrench,
+  Zap,
 } from 'lucide-react'
 
-function TypingIndicator() {
+/* Pick an icon based on the message content heuristic */
+function statusIcon(text) {
+  const t = text.toLowerCase()
+  if (t.includes('list') || t.includes('read') || t.includes('file')) return <FileText size={10} />
+  if (t.includes('search') || t.includes('find') || t.includes('look')) return <Search size={10} />
+  if (t.includes('writ') || t.includes('updat') || t.includes('creat') || t.includes('generat')) return <Wrench size={10} />
+  return <Zap size={10} />
+}
+
+function LiveActivityFeed({ logs }) {
   return (
     <div className="ide-chat-msg ide-chat-msg--assistant ide-fade-in">
-      <div className="ide-chat-avatar ide-chat-avatar--ai">
+      <div className="ide-chat-avatar ide-chat-avatar--ai" style={{ marginTop: 2, flexShrink: 0 }}>
         <Bot size={11} />
       </div>
-      <div className="ide-chat-bubble ide-chat-bubble--ai">
-        <div className="ide-typing">
-          <span /><span /><span />
-        </div>
+      <div className="ide-activity-feed">
+        {logs.map((line, i) => {
+          const isLast = i === logs.length - 1
+          return (
+            <div key={i} className={`ide-activity-row${isLast ? ' ide-activity-row--active' : ' ide-activity-row--done'}`}>
+              <span className="ide-activity-icon">
+                {isLast
+                  ? <Loader2 size={10} className="ide-spin" />
+                  : <span className="ide-activity-check">✓</span>
+                }
+              </span>
+              <span className="ide-activity-text">{line}</span>
+            </div>
+          )
+        })}
       </div>
     </div>
   )
@@ -30,7 +54,7 @@ function ChatMessage({ msg }) {
   return (
     <div className={`ide-chat-msg${isUser ? ' ide-chat-msg--user' : ' ide-chat-msg--assistant'} ide-fade-in`}>
       {!isUser && (
-        <div className="ide-chat-avatar ide-chat-avatar--ai">
+        <div className="ide-chat-avatar ide-chat-avatar--ai" style={{ marginTop: 2, flexShrink: 0 }}>
           <Bot size={11} />
         </div>
       )}
@@ -43,7 +67,7 @@ function ChatMessage({ msg }) {
         )}
       </div>
       {isUser && (
-        <div className="ide-chat-avatar ide-chat-avatar--user">
+        <div className="ide-chat-avatar ide-chat-avatar--user" style={{ marginTop: 2, flexShrink: 0 }}>
           <User size={11} />
         </div>
       )}
@@ -60,7 +84,7 @@ export default function ChatPanel({ sandboxId }) {
   ])
   const [input, setInput] = useState('')
   const [isStreaming, setIsStreaming] = useState(false)
-  const [streamStatus, setStreamStatus] = useState('')
+  const [streamLogs, setStreamLogs] = useState([])   // live activity lines
   const [error, setError] = useState(null)
   const [showScrollBtn, setShowScrollBtn] = useState(false)
   const bottomRef = useRef(null)
@@ -70,7 +94,7 @@ export default function ChatPanel({ sandboxId }) {
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages, isStreaming])
+  }, [messages, streamLogs, isStreaming])
 
   const handleScroll = useCallback(() => {
     const el = scrollAreaRef.current
@@ -100,7 +124,7 @@ export default function ChatPanel({ sandboxId }) {
       inputRef.current.style.height = 'auto'
     }
     setError(null)
-    setStreamStatus('')
+    setStreamLogs([])
     inputRef.current?.focus()
 
     setMessages((prev) => [...prev, { role: 'user', content: text }])
@@ -121,7 +145,7 @@ export default function ChatPanel({ sandboxId }) {
 
       const reader = res.body.getReader()
       const decoder = new TextDecoder()
-      let statusMessages = []
+      let allLogs = []
 
       while (true) {
         const { done, value } = await reader.read()
@@ -129,20 +153,21 @@ export default function ChatPanel({ sandboxId }) {
         const chunk = decoder.decode(value, { stream: true })
         const lines = chunk.split('\n').filter((l) => l.trim())
         for (const line of lines) {
+          let data = null
           if (line.startsWith('data:')) {
-            const data = line.slice(5).trim()
-            if (data && data !== '[DONE]') {
-              statusMessages.push(data)
-              setStreamStatus(data)
-            }
+            data = line.slice(5).trim()
           } else if (line.trim()) {
-            statusMessages.push(line.trim())
-            setStreamStatus(line.trim())
+            data = line.trim()
+          }
+          if (data && data !== '[DONE]') {
+            allLogs = [...allLogs, data]
+            setStreamLogs([...allLogs])
           }
         }
       }
 
-      const summary = statusMessages.filter(Boolean).join(' · ') || 'Code generated successfully'
+      const summary = allLogs.filter(Boolean).join(' · ') || 'Code generated successfully'
+      setStreamLogs([])
       setMessages((prev) => [
         ...prev,
         {
@@ -156,6 +181,7 @@ export default function ChatPanel({ sandboxId }) {
     } catch (err) {
       if (err.name === 'AbortError') return
       setError(err.message)
+      setStreamLogs([])
       setMessages((prev) => [
         ...prev,
         {
@@ -165,7 +191,7 @@ export default function ChatPanel({ sandboxId }) {
       ])
     } finally {
       setIsStreaming(false)
-      setStreamStatus('')
+      setStreamLogs([])
     }
   }, [input, isStreaming, sandboxId])
 
@@ -192,9 +218,7 @@ export default function ChatPanel({ sandboxId }) {
         {isStreaming && (
           <div className="ide-chat__streaming">
             <Loader2 size={11} className="ide-spin" />
-            <span className="ide-chat__streaming-text">
-              {streamStatus || 'Generating…'}
-            </span>
+            <span className="ide-chat__streaming-text">Working…</span>
           </div>
         )}
       </div>
@@ -208,7 +232,27 @@ export default function ChatPanel({ sandboxId }) {
         {messages.map((msg, i) => (
           <ChatMessage key={i} msg={msg} />
         ))}
-        {isStreaming && <TypingIndicator />}
+
+        {/* Live activity feed — shown while streaming */}
+        {isStreaming && streamLogs.length > 0 && (
+          <LiveActivityFeed logs={streamLogs} />
+        )}
+
+        {/* Fallback plain typing dots if no logs yet */}
+        {isStreaming && streamLogs.length === 0 && (
+          <div className="ide-chat-msg ide-chat-msg--assistant ide-fade-in">
+            <div className="ide-chat-avatar ide-chat-avatar--ai" style={{ marginTop: 2 }}>
+              <Bot size={11} />
+            </div>
+            <div className="ide-activity-feed">
+              <div className="ide-activity-row ide-activity-row--active">
+                <span className="ide-activity-icon"><Loader2 size={10} className="ide-spin" /></span>
+                <span className="ide-activity-text">Thinking…</span>
+              </div>
+            </div>
+          </div>
+        )}
+
         {error && (
           <div className="ide-chat-error">
             <AlertCircle size={12} />
@@ -259,3 +303,4 @@ export default function ChatPanel({ sandboxId }) {
     </div>
   )
 }
+
