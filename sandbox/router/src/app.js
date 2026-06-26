@@ -3,6 +3,7 @@ import morgan from 'morgan'
 import http from 'http'
 import { createProxyMiddleware } from 'http-proxy-middleware'
 import { createProxyServer } from 'httpxy';
+import { refreshTTL } from './config/redis.js';
 
 const app = express()
 const server = http.createServer(app)
@@ -49,12 +50,14 @@ function getAgentProxy(sandboxId) {
 const wsProxy = createProxyServer({ changeOrigin: true });
 wsProxy.on('error', (err, req, socket) => { socket?.destroy(); });
 
-app.use((req, res, next) => {
+app.use(async (req, res, next) => {
     const host = req.headers.host || ''
     const parts = host.split('.')
 
     const sandboxId = parts[0]
     const subdomain = parts[1]
+
+    await refreshTTL(sandboxId)
 
     if (subdomain === 'agent') {
         return getAgentProxy(sandboxId)(req, res, next)

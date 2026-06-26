@@ -19,6 +19,13 @@ build:
       sync:
         infer:
           - "src/**"
+    - image: notification
+      context: notification
+      docker:
+        dockerfile: dockerfile
+      sync:
+        infer:
+          - "src/**"
     - image: agent
       context: sandbox/agent
       docker:
@@ -50,6 +57,8 @@ manifests:
     - k8s/rbac-serviceaccount.yml
     - k8s/rbac-role.yml
     - k8s/rbac-rolebinding.yml
+    - k8s/notification-deployment.yml
+    - k8s/notification-service.yml
 
 deploy:
   kubectl: {}
