@@ -9,6 +9,10 @@
 export const ENDPOINTS = {
   // Main backend
   startSandbox: () => `/api/sandbox/start`,
+  createProject: () => `/api/sandbox/project`,
+  getProjects:   () => `/api/sandbox/projects`,
+  googleLogin:   () => `/api/auth/google`,
+  getMe:         () => `/api/auth/getMe`,
   invokeAI:     () => `/api/ai/invoke`,
 
   // Sandbox agent — direct calls to the agent subdomain

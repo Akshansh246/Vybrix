@@ -1,6 +1,7 @@
-import { Code2, Circle, Settings, Copy, Check, Zap } from 'lucide-react'
-import { useState, useCallback } from 'react'
+import { Code2, Circle, Settings, Copy, Check, Zap, Loader2 } from 'lucide-react'
+import { useState, useCallback, useEffect } from 'react'
 import useIDEStore from '../../store/useIDEStore.js'
+import { ENDPOINTS } from '../../config/api.js'
 
 function StatusDot({ status }) {
   const config = {
@@ -21,6 +22,15 @@ function StatusDot({ status }) {
 export default function TopNavbar({ sandboxId }) {
   const sandboxStatus = useIDEStore((s) => s.sandboxStatus)
   const [copied, setCopied] = useState(false)
+
+  const user = useIDEStore((s) => s.user)
+  const isAuthenticated = useIDEStore((s) => s.isAuthenticated)
+  const isLoadingUser = useIDEStore((s) => s.isLoadingUser)
+  const fetchUser = useIDEStore((s) => s.fetchUser)
+
+  useEffect(() => {
+    fetchUser()
+  }, [fetchUser])
 
   const handleCopyId = useCallback(() => {
     if (!sandboxId) return
@@ -73,9 +83,50 @@ export default function TopNavbar({ sandboxId }) {
         <button className="ide-icon-btn" title="Settings" id="ide-settings-btn">
           <Settings size={15} />
         </button>
-        <div className="ide-avatar">
-          <Code2 size={13} />
-        </div>
+        {isLoadingUser ? (
+          <div className="ide-avatar ide-avatar--loading">
+            <Loader2 size={12} className="animate-spin" />
+          </div>
+        ) : isAuthenticated && user ? (
+          <div className="ide-avatar-wrapper">
+            <img
+              src={user.picture || user.avatar || 'https://via.placeholder.com/26'}
+              alt={user.name || 'User'}
+              className="ide-avatar-img"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || 'U')}&background=000&color=fff`;
+              }}
+            />
+            {/* Popover Hover Card */}
+            <div className="ide-profile-popover">
+              <div className="ide-popover-info">
+                <img
+                  src={user.picture || user.avatar || 'https://via.placeholder.com/48'}
+                  alt={user.name}
+                  className="ide-popover-avatar"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || 'U')}&background=000&color=fff`;
+                  }}
+                />
+                <div className="ide-popover-details">
+                  <span className="ide-popover-name">{user.name || user.displayName}</span>
+                  <span className="ide-popover-email">{user.email || 'Google User'}</span>
+                  <span className="ide-popover-badge">Authenticated via Google</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <a
+            href={ENDPOINTS.googleLogin()}
+            className="ide-login-btn"
+            title="Login to save workspaces"
+          >
+            Login
+          </a>
+        )}
       </div>
     </header>
   )

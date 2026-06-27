@@ -1,11 +1,13 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ENDPOINTS } from '../config/api.js'
+import useIDEStore from '../store/useIDEStore.js'
 import '../landing.css'
 import Orb from '../components/Orb.jsx'
 import {
   Zap, Eye, Terminal, ArrowRight, GitFork, Code2,
-  Layers, CheckCircle, Sparkles, Play
+  Layers, CheckCircle, Sparkles, Play, Plus, Folder,
+  ArrowLeft, Loader2
 } from 'lucide-react'
 
 /* ─────────────────────────────────────────────────────────────────
@@ -43,16 +45,54 @@ export default function LandingPage() {
   const [mounted, setMounted] = useState(false)
   const mouse = useMouseParallax()
 
+  const user = useIDEStore((s) => s.user)
+  const isAuthenticated = useIDEStore((s) => s.isAuthenticated)
+  const isLoadingUser = useIDEStore((s) => s.isLoadingUser)
+  const fetchUser = useIDEStore((s) => s.fetchUser)
+
+  // Project management states
+  const [projects, setProjects] = useState([])
+  const [isLoadingProjects, setIsLoadingProjects] = useState(true)
+  const [newProjectTitle, setNewProjectTitle] = useState('')
+  const [isCreatingProject, setIsCreatingProject] = useState(false)
+  const [flowStep, setFlowStep] = useState('hero') // 'hero' | 'projects' | 'create'
+
   useEffect(() => {
     const t = setTimeout(() => setMounted(true), 60)
     return () => clearTimeout(t)
   }, [])
 
-  const handleStartSandbox = useCallback(async () => {
+  useEffect(() => {
+    fetchUser()
+  }, [fetchUser])
+
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        const res = await fetch(ENDPOINTS.getProjects(), { credentials: 'include' })
+        if (res.ok) {
+          const data = await res.json()
+          setProjects(data.projects || [])
+        }
+      } catch (err) {
+        console.error('Failed to load projects:', err)
+      } finally {
+        setIsLoadingProjects(false)
+      }
+    }
+    fetchProjects()
+  }, [])
+
+  const handleStartSandbox = useCallback(async (projectId) => {
     setIsLoading(true)
     setError(null)
     try {
-      const res = await fetch(ENDPOINTS.startSandbox(), { method: 'POST' })
+      const res = await fetch(ENDPOINTS.startSandbox(), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectId }),
+        credentials: 'include'
+      })
       if (!res.ok) throw new Error(`Server error: ${res.status}`)
       const data = await res.json()
       navigate(`/workspace/${data.sandboxId}`, { state: { sandboxData: data } })
@@ -61,6 +101,51 @@ export default function LandingPage() {
       setIsLoading(false)
     }
   }, [navigate])
+
+  const handleCreateProject = useCallback(async (e) => {
+    if (e) e.preventDefault()
+    if (!newProjectTitle.trim()) return
+    setIsCreatingProject(true)
+    setError(null)
+    try {
+      const res = await fetch(ENDPOINTS.createProject(), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: newProjectTitle }),
+        credentials: 'include'
+      })
+      if (!res.ok) throw new Error(`Failed to create project: ${res.status}`)
+      const data = await res.json()
+      const newProj = data.project
+      if (newProj && newProj._id) {
+        setProjects(prev => [newProj, ...prev])
+        setNewProjectTitle('')
+        await handleStartSandbox(newProj._id)
+      } else {
+        throw new Error('Project creation returned invalid data')
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to create project. Please try again.')
+      setIsCreatingProject(false)
+    }
+  }, [newProjectTitle, handleStartSandbox])
+
+  const handleStartFlow = useCallback(() => {
+    if (isLoadingProjects) {
+      setFlowStep('projects')
+      return
+    }
+    if (projects.length > 0) {
+      setFlowStep('projects')
+    } else {
+      setFlowStep('create')
+    }
+  }, [projects, isLoadingProjects])
+
+  const handleBottomCTA = useCallback(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+    handleStartFlow()
+  }, [handleStartFlow])
 
   const features = [
     {
@@ -204,15 +289,60 @@ export default function LandingPage() {
                   <GitFork size={13} />
                   GitHub
                 </a>
+                {isLoadingUser ? (
+                  <span className="landing-nav__link">
+                    <Loader2 size={12} className="animate-spin" />
+                  </span>
+                ) : isAuthenticated && user ? (
+                  <div className="landing-nav__profile">
+                    <img
+                      src={user.picture || user.avatar || 'https://via.placeholder.com/24'}
+                      alt={user.name || 'User'}
+                      className="landing-nav__avatar"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || 'U')}&background=000&color=fff`;
+                      }}
+                    />
+                    <span className="landing-nav__username">{user.name || user.displayName}</span>
+                    
+                    {/* Hover profile popover card */}
+                    <div className="landing-nav__popover">
+                      <div className="landing-popover-info">
+                        <img
+                          src={user.picture || user.avatar || 'https://via.placeholder.com/48'}
+                          alt={user.name}
+                          className="landing-popover-avatar"
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || 'U')}&background=000&color=fff`;
+                          }}
+                        />
+                        <div className="landing-popover-details">
+                          <span className="landing-popover-name">{user.name || user.displayName}</span>
+                          <span className="landing-popover-email">{user.email || 'Google User'}</span>
+                          <span className="landing-popover-badge">Authenticated via Google</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <a
+                    href={ENDPOINTS.googleLogin()}
+                    className="landing-nav__link landing-nav__link--login"
+                  >
+                    Login / Register
+                  </a>
+                )}
               </div>
 
               {/* CTA */}
               <button
                 id="nav-launch-btn"
-                onClick={handleStartSandbox}
-                disabled={isLoading}
+                onClick={handleStartFlow}
+                disabled={isLoading || isCreatingProject}
               >
-                {isLoading ? (
+                {isLoading || isCreatingProject ? (
                   <span className="landing-spinner landing-spinner--sm" />
                 ) : (
                   <>Launch IDE <ArrowRight size={13} /></>
@@ -225,70 +355,219 @@ export default function LandingPage() {
         {/* ── Hero content with Glassmorphism Panel ────────────── */}
         <div className={`landing-hero__content ${mounted ? 'landing-hero__content--visible' : ''}`}>
           <div className="landing-glass-panel">
-            {/* Badge */}
-            <div className="landing-badge">
-              <span className="landing-badge__dot" />
-              <Sparkles size={11} />
-              AI-Powered Cloud IDE · Now in Beta
-            </div>
+            {flowStep === 'hero' ? (
+              <>
+                {/* Badge */}
+                <div className="landing-badge">
+                  <span className="landing-badge__dot" />
+                  <Sparkles size={11} />
+                  AI-Powered Cloud IDE · Now in Beta
+                </div>
 
-            {/* Headline */}
-            <h1 className="landing-headline">
-              Build at the speed<br />
-              <span className="landing-headline__accent">of thought.</span>
-            </h1>
+                {/* Headline */}
+                <h1 className="landing-headline">
+                  Build at the speed<br />
+                  <span className="landing-headline__accent">of thought.</span>
+                </h1>
 
-            {/* Sub */}
-            <p className="landing-sub">
-              Describe your UI in plain English. Vybrix writes the code, spins up
-              a live sandbox, and gives you a full IDE — all in seconds.
-            </p>
+                {/* Sub */}
+                <p className="landing-sub">
+                  Describe your UI in plain English. Vybrix writes the code, spins up
+                  a live sandbox, and gives you a full IDE — all in seconds.
+                </p>
 
-            {/* Error */}
-            {error && (
-              <div className="landing-error">
-                <span className="landing-error__icon">⚠</span>
-                {error}
+                {/* Error */}
+                {error && (
+                  <div className="landing-error">
+                    <span className="landing-error__icon">⚠</span>
+                    {error}
+                  </div>
+                )}
+
+                {/* CTA row */}
+                <div className="landing-cta-row">
+                  <button
+                    id="hero-start-btn"
+                    onClick={handleStartFlow}
+                    disabled={isLoading || isCreatingProject}
+                    className="landing-btn landing-btn--primary landing-btn--lg"
+                  >
+                    {isLoading || isCreatingProject ? (
+                      <>
+                        <span className="landing-spinner" />
+                        Initializing...
+                      </>
+                    ) : (
+                      <>
+                        <Play size={15} style={{ fill: 'currentColor' }} />
+                        Start Building Free
+                      </>
+                    )}
+                  </button>
+                  <a
+                    href="#how-it-works"
+                    className="landing-btn landing-btn--ghost landing-btn--lg"
+                  >
+                    See how it works
+                  </a>
+                </div>
+
+                {/* Trust badges */}
+                <div className="landing-trust">
+                  {highlights.map((h) => (
+                    <span key={h} className="landing-trust__item">
+                      <CheckCircle size={12} className="landing-trust__check" />
+                      {h}
+                    </span>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className="project-card">
+                <div className="project-flow-container">
+                  {/* Header */}
+                  <div className="project-flow-header">
+                    <button
+                      type="button"
+                      className="project-flow-back-btn"
+                      onClick={() => {
+                        if (flowStep === 'create' && projects.length > 0) {
+                          setFlowStep('projects')
+                        } else {
+                          setFlowStep('hero')
+                        }
+                        setError(null)
+                      }}
+                      title="Go back"
+                    >
+                      <ArrowLeft size={16} />
+                    </button>
+                    <div className="project-flow-title-wrapper">
+                      <h3 className="project-flow-title">
+                        {flowStep === 'projects' ? 'Select Project' : 'Create New Project'}
+                      </h3>
+                      <p className="project-flow-subtitle">
+                        {flowStep === 'projects'
+                          ? 'Choose an existing workspace to resume building'
+                          : 'Enter a title to launch a fresh sandbox environment'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Error inside Card */}
+                  {error && (
+                    <div className="landing-error" style={{ marginTop: 0, marginBottom: 16 }}>
+                      <span className="landing-error__icon">⚠</span>
+                      {error}
+                    </div>
+                  )}
+
+                  {/* Step content */}
+                  {flowStep === 'projects' && (
+                    <>
+                      {isLoadingProjects ? (
+                        <div className="project-list-container">
+                          {[1, 2, 3].map((n) => (
+                            <div key={n} className="project-skeleton-item">
+                              <div className="project-skeleton-icon" />
+                              <div className="project-skeleton-meta">
+                                <div className="project-skeleton-name" />
+                                <div className="project-skeleton-date" />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="project-list-container">
+                          {projects.map((project) => (
+                            <div
+                              key={project._id}
+                              className="project-item"
+                              onClick={() => {
+                                if (!isLoading && !isCreatingProject) {
+                                  handleStartSandbox(project._id)
+                                }
+                              }}
+                            >
+                              <div className="project-item-info">
+                                <div className="project-item-icon-wrapper">
+                                  <Folder size={16} />
+                                </div>
+                                <div className="project-item-meta">
+                                  <span className="project-item-name">{project.title}</span>
+                                  <span className="project-item-date">
+                                    {project.createdAt
+                                      ? new Date(project.createdAt).toLocaleDateString(undefined, {
+                                          month: 'short',
+                                          day: 'numeric',
+                                          year: 'numeric',
+                                        })
+                                      : 'Active workspace'}
+                                  </span>
+                                </div>
+                              </div>
+                              <ArrowRight size={14} className="project-item-chevron" />
+                            </div>
+                          ))}
+
+                          <button
+                            type="button"
+                            className="project-create-trigger"
+                            onClick={() => setFlowStep('create')}
+                            disabled={isLoading || isCreatingProject}
+                          >
+                            <Plus size={14} />
+                            Create New Project
+                          </button>
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  {flowStep === 'create' && (
+                    <form onSubmit={handleCreateProject} className="project-form">
+                      <div>
+                        <label htmlFor="project-title" className="project-input-label">
+                          Project Title
+                        </label>
+                        <div className="project-input-container">
+                          <input
+                            id="project-title"
+                            type="text"
+                            className="project-input"
+                            placeholder="e.g., My Portfolio, E-commerce App"
+                            value={newProjectTitle}
+                            onChange={(e) => setNewProjectTitle(e.target.value)}
+                            disabled={isLoading || isCreatingProject}
+                            required
+                            autoFocus
+                          />
+                        </div>
+                      </div>
+
+                      <button
+                        type="submit"
+                        disabled={!newProjectTitle.trim() || isLoading || isCreatingProject}
+                        className="landing-btn landing-btn--primary landing-btn--lg"
+                        style={{ width: '100%', justifyContent: 'center' }}
+                      >
+                        {isLoading || isCreatingProject ? (
+                          <>
+                            <span className="landing-spinner" style={{ marginRight: 8 }} />
+                            Creating Sandbox…
+                          </>
+                        ) : (
+                          <>
+                            <Play size={14} style={{ fill: 'currentColor', marginRight: 6 }} />
+                            Create & Launch
+                          </>
+                        )}
+                      </button>
+                    </form>
+                  )}
+                </div>
               </div>
             )}
-
-            {/* CTA row */}
-            <div className="landing-cta-row">
-              <button
-                id="hero-start-btn"
-                onClick={handleStartSandbox}
-                disabled={isLoading}
-                className="landing-btn landing-btn--primary landing-btn--lg"
-              >
-                {isLoading ? (
-                  <>
-                    <span className="landing-spinner" />
-                    Creating Sandbox…
-                  </>
-                ) : (
-                  <>
-                    <Play size={15} style={{ fill: 'currentColor' }} />
-                    Start Building Free
-                  </>
-                )}
-              </button>
-              <a
-                href="#how-it-works"
-                className="landing-btn landing-btn--ghost landing-btn--lg"
-              >
-                See how it works
-              </a>
-            </div>
-
-            {/* Trust badges */}
-            <div className="landing-trust">
-              {highlights.map((h) => (
-                <span key={h} className="landing-trust__item">
-                  <CheckCircle size={12} className="landing-trust__check" />
-                  {h}
-                </span>
-              ))}
-            </div>
           </div>
         </div>
 
@@ -373,14 +652,14 @@ export default function LandingPage() {
           </p>
           <button
             id="cta-start-btn"
-            onClick={handleStartSandbox}
-            disabled={isLoading}
+            onClick={handleBottomCTA}
+            disabled={isLoading || isCreatingProject}
             className="landing-btn landing-btn--primary landing-btn--xl"
           >
-            {isLoading ? (
+            {isLoading || isCreatingProject ? (
               <>
                 <span className="landing-spinner" />
-                Creating…
+                Processing…
               </>
             ) : (
               <>Start Building Free <ArrowRight size={17} /></>

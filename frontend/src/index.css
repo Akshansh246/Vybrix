@@ -248,6 +248,128 @@ body {
 }
 .ide-avatar:hover { border-color: var(--ide-accent-dim); color: var(--ide-text); }
 
+/* --- Workspace Navbar Auth & User details --- */
+.ide-avatar-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ide-avatar-img {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  object-fit: cover;
+  border: 1px solid var(--ide-border);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.ide-avatar-img:hover {
+  border-color: var(--ide-accent-dim);
+}
+
+.ide-avatar--loading {
+  color: var(--ide-accent);
+}
+
+.ide-login-btn {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: var(--ide-surface-2);
+  border: 1px solid var(--ide-border);
+  border-radius: 4px;
+  padding: 5px 12px;
+  color: var(--ide-text);
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.ide-login-btn:hover {
+  background: var(--ide-surface-3);
+  border-color: var(--ide-accent-dim);
+}
+
+/* Workspace Top Navbar profile popover */
+.ide-profile-popover {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 8px;
+  width: 260px;
+  background: rgba(15, 15, 15, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 14px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(4px);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 1000;
+}
+
+.ide-avatar-wrapper:hover .ide-profile-popover {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.ide-popover-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  text-align: left;
+}
+
+.ide-popover-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+}
+
+.ide-popover-details {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.ide-popover-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #FFFFFF;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ide-popover-email {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: 2px;
+  word-break: break-all;
+}
+
+.ide-popover-badge {
+  font-size: 9px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  padding: 1px 5px;
+  margin-top: 6px;
+  align-self: flex-start;
+}
+
 /* ================================================================
    MAIN LAYOUT (3-column)
 ================================================================ */

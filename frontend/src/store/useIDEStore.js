@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { ENDPOINTS } from '../config/api.js'
 
 // Helper: get language from file extension
 export function getLanguageFromPath(path) {
@@ -36,6 +37,11 @@ const useIDEStore = create(
       // ── Panel visibility ─────────────────────────────────────────
       sidebarOpen: true,
       terminalOpen: true,
+
+      // ── Authentication State ─────────────────────────────────────
+      user: null,
+      isAuthenticated: false,
+      isLoadingUser: true,
 
       // ── Center panel mode ────────────────────────────────────────
       centerMode: 'preview', // 'preview' | 'code'
@@ -149,6 +155,26 @@ const useIDEStore = create(
       cacheContent: (path, content) => {
         const { contentCache } = get()
         set({ contentCache: { ...contentCache, [path]: content } })
+      },
+
+      // ── Actions: Authentication ──────────────────────────────────
+      fetchUser: async () => {
+        set({ isLoadingUser: true })
+        try {
+          const res = await fetch(ENDPOINTS.getMe(), { credentials: 'include' })
+          if (res.ok) {
+            const data = await res.json()
+            const userData = data.user || data
+            if (userData && (userData.name || userData.email || userData.displayName || userData._id)) {
+              set({ user: userData, isAuthenticated: true, isLoadingUser: false })
+              return
+            }
+          }
+          set({ user: null, isAuthenticated: false, isLoadingUser: false })
+        } catch (err) {
+          console.error('fetchUser error:', err)
+          set({ user: null, isAuthenticated: false, isLoadingUser: false })
+        }
       },
 
       // ── Actions: Status ───────────────────────────────────────────
