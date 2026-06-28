@@ -337,17 +337,19 @@ export default function LandingPage() {
               </div>
 
               {/* CTA */}
-              <button
-                id="nav-launch-btn"
-                onClick={handleStartFlow}
-                disabled={isLoading || isCreatingProject}
-              >
-                {isLoading || isCreatingProject ? (
-                  <span className="landing-spinner landing-spinner--sm" />
-                ) : (
-                  <>Launch IDE <ArrowRight size={13} /></>
-                )}
-              </button>
+              {!isLoadingUser && isAuthenticated && (
+                <button
+                  id="nav-launch-btn"
+                  onClick={handleStartFlow}
+                  disabled={isLoading || isCreatingProject}
+                >
+                  {isLoading || isCreatingProject ? (
+                    <span className="landing-spinner landing-spinner--sm" />
+                  ) : (
+                    <>Launch IDE <ArrowRight size={13} /></>
+                  )}
+                </button>
+              )}
             </div>
           </div>
         </nav>
@@ -386,24 +388,35 @@ export default function LandingPage() {
 
                 {/* CTA row */}
                 <div className="landing-cta-row">
-                  <button
-                    id="hero-start-btn"
-                    onClick={handleStartFlow}
-                    disabled={isLoading || isCreatingProject}
-                    className="landing-btn landing-btn--primary landing-btn--lg"
-                  >
-                    {isLoading || isCreatingProject ? (
-                      <>
-                        <span className="landing-spinner" />
-                        Initializing...
-                      </>
+                  {!isLoadingUser && (
+                    isAuthenticated ? (
+                      <button
+                        id="hero-start-btn"
+                        onClick={handleStartFlow}
+                        disabled={isLoading || isCreatingProject}
+                        className="landing-btn landing-btn--primary landing-btn--lg"
+                      >
+                        {isLoading || isCreatingProject ? (
+                          <>
+                            <span className="landing-spinner" />
+                            Initializing...
+                          </>
+                        ) : (
+                          <>
+                            <Play size={15} style={{ fill: 'currentColor' }} />
+                            Start Building Free
+                          </>
+                        )}
+                      </button>
                     ) : (
-                      <>
-                        <Play size={15} style={{ fill: 'currentColor' }} />
-                        Start Building Free
-                      </>
-                    )}
-                  </button>
+                      <a
+                        href={ENDPOINTS.googleLogin()}
+                        className="landing-btn landing-btn--primary landing-btn--lg"
+                      >
+                        Login / Register to Start
+                      </a>
+                    )
+                  )}
                   <a
                     href="#how-it-works"
                     className="landing-btn landing-btn--ghost landing-btn--lg"
@@ -648,23 +661,36 @@ export default function LandingPage() {
           <Layers size={36} className="landing-cta-icon" />
           <h2 className="landing-cta__title">Ready to build something?</h2>
           <p className="landing-cta__sub">
-            No sign-up needed. Launch a sandbox and start building with AI in seconds.
+            {isAuthenticated
+              ? 'Launch your sandbox and start building with AI in seconds.'
+              : 'Sign up to launch a sandbox and start building with AI in seconds.'}
           </p>
-          <button
-            id="cta-start-btn"
-            onClick={handleBottomCTA}
-            disabled={isLoading || isCreatingProject}
-            className="landing-btn landing-btn--primary landing-btn--xl"
-          >
-            {isLoading || isCreatingProject ? (
-              <>
-                <span className="landing-spinner" />
-                Processing…
-              </>
+          {!isLoadingUser && (
+            isAuthenticated ? (
+              <button
+                id="cta-start-btn"
+                onClick={handleBottomCTA}
+                disabled={isLoading || isCreatingProject}
+                className="landing-btn landing-btn--primary landing-btn--xl"
+              >
+                {isLoading || isCreatingProject ? (
+                  <>
+                    <span className="landing-spinner" />
+                    Processing…
+                  </>
+                ) : (
+                  <>Start Building Free <ArrowRight size={17} /></>
+                )}
+              </button>
             ) : (
-              <>Start Building Free <ArrowRight size={17} /></>
-            )}
-          </button>
+              <a
+                href={ENDPOINTS.googleLogin()}
+                className="landing-btn landing-btn--primary landing-btn--xl"
+              >
+                Login / Register to Build <ArrowRight size={17} />
+              </a>
+            )
+          )}
         </div>
       </section>
 
